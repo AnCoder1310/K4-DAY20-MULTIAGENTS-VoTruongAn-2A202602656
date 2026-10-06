@@ -1,4 +1,4 @@
-"""GUIDE Phần 1 - Chạy một tác vụ (task) và ghi kết quả.   >>> SINH VIÊN CÀI ĐẶT run_task <<<
+"""GUIDE Phần 1 - Chạy một tác vụ (task) và ghi kết quả.
 
 Pseudo-code: guides/pseudocode/03_runner.md
 Kiểm tra:    pytest tests/test_03_runner.py
@@ -6,10 +6,16 @@ Chạy thật:   python -m lab.runner --condition baseline --tasks learn
 """
 import argparse
 import json
+import shutil
+import tempfile
+import time
+from datetime import datetime, timezone
 from pathlib import Path
 
+from langchain_core.callbacks import UsageMetadataCallbackHandler
 from langchain_core.messages import AIMessage, ToolMessage
 
+from .agent import build_agent
 from .grading import grade                                                      # có sẵn
 from .tasks import ROOT, get_task, hash_dir, list_tasks, prepare_sandbox         # có sẵn
 
@@ -38,7 +44,9 @@ def render_trace(messages) -> str:
             if m.content:
                 parts.append(f"### Assistant\n{clean(m.content)}")
             for tc in m.tool_calls:
-                parts.append(f"### Tool call: {tc['name']}\n{clean(json.dumps(tc['args'], ensure_ascii=False))}")
+                tc_name = tc["name"]
+            tc_args = clean(json.dumps(tc["args"], ensure_ascii=False))
+            parts.append(f"### Tool call: {tc_name}\n{tc_args}")
         elif isinstance(m, ToolMessage):
             parts.append(f"### Tool result\n{clean(m.content)}")
         else:
@@ -65,7 +73,92 @@ def run_task(task_id: str, condition: str, results_dir="results", model=None, re
     Lỗi khi chạy tác tử KHÔNG được làm chương trình dừng: ghi vào `error` và vẫn chấm điểm.
     Sandbox là thư mục tạm NGOÀI kho mã nguồn và phải được xóa sau khi chạy.
     """
-    raise NotImplementedError("TODO 1: cài đặt run_task (xem guides/pseudocode/03_runner.md)")
+    cfg = CONDITIONS[condition]
+    task = get_task(task_id)
+    skills_dir = (ROOT / cfg["skills_dir"]) if cfg.get("skills_dir") else None
+    out = Path(results_dir) / condition / task_id
+    out.mkdir(parents=True, exist_ok=True)
+
+    sandbox = Path(tempfile.mkdtemp(prefix="agent_sandbox_"))
+    timestamp = datetime.now(timezone.utc).isoformat()
+    record = {
+        "task": task_id,
+        "condition": condition,
+        "role": task.role,
+        "error": None,
+        "timestamp": timestamp,
+    }
+
+    try:
+        prepare_sandbox(task, sandbox, skills_dir)
+        hash_truoc = hash_dir(sandbox / "skills")
+        record["skills_sha256"] = hash_truoc
+
+        agent = build_agent(
+            sandbox,
+            mode=cfg["mode"],
+            use_skills=(skills_dir is not None),
+            model=model,
+        )
+        usage = UsageMetadataCallbackHandler()
+        t0 = time.perf_counter()
+        messages = []
+        final_message = ""
+
+        try:
+            result = agent.invoke(
+                {"messages": [{"role": "user", "content": task.instruction}]},
+                config={"callbacks": [usage], "recursion_limit": recursion_limit},
+            )
+            messages = result.get("messages", [])
+            if messages:
+                last_m = messages[-1]
+                final_message = str(getattr(last_m, "content", ""))
+        except Exception as exc:  # noqa: BLE001
+            record["error"] = f"{type(exc).__name__}: {exc}"
+
+        t1 = time.perf_counter()
+        record["seconds"] = round(t1 - t0, 1)
+
+        input_tokens = sum(v.get("input_tokens", 0) for v in usage.usage_metadata.values())
+        output_tokens = sum(v.get("output_tokens", 0) for v in usage.usage_metadata.values())
+        total_tokens = sum(v.get("total_tokens", 0) for v in usage.usage_metadata.values())
+        record["tokens"] = {
+            "input": input_tokens,
+            "output": output_tokens,
+            "total": total_tokens,
+        }
+
+        calls = [tc for m in messages if isinstance(m, AIMessage) for tc in (m.tool_calls or [])]
+        record["tool_calls"] = len(calls)
+        record["subagent_calls"] = sum(1 for tc in calls if tc.get("name") == "task")
+
+        skills_read_set = set()
+        for tc in calls:
+            if tc.get("name") == "read_file":
+                fp = str(tc.get("args", {}).get("file_path", ""))
+                if "skills/" in fp:
+                    parts = fp.split("skills/", 1)[-1].strip("/").split("/")
+                    if parts and parts[0]:
+                        skills_read_set.add(parts[0])
+        record["skills_read"] = len(skills_read_set)
+
+        hash_sau = hash_dir(sandbox / "skills")
+        record["skills_modified"] = (hash_sau != hash_truoc)
+        record["final_message"] = final_message
+
+        g = grade(task, sandbox / "workspace")
+        record["score"] = g.get("score", 0.0)
+        record["passed"] = g.get("passed", 0)
+        record["total"] = g.get("total", 0)
+        record["checks"] = g.get("checks", [])
+
+        (out / "trace.md").write_text(render_trace(messages), encoding="utf-8")
+    finally:
+        shutil.rmtree(sandbox, ignore_errors=True)
+
+    (out / "run.json").write_text(json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8")
+    return record
 
 
 def main(argv=None):
@@ -92,7 +185,7 @@ def main(argv=None):
             print(f"{args.condition:13s} {tid:11s} CRASH {type(exc).__name__}: {exc}", flush=True)
             continue
         print(f"{args.condition:13s} {tid:11s} score={r['passed']}/{r['total']} tokens={r['tokens']['total']} "
-              f"calls={r['tool_calls']} {r['seconds']}s" + (f" ERROR={r['error']}" if r["error"] else ""), flush=True)
+              f"calls={r['tool_calls']} {r['seconds']}s" + (f" ERROR={r['error']}" if r['error'] else ""), flush=True)
 
 
 if __name__ == "__main__":

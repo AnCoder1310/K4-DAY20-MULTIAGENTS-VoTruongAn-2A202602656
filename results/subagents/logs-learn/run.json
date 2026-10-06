@@ -1,0 +1,69 @@
+{
+  "task": "logs-learn",
+  "condition": "subagents",
+  "role": "learn",
+  "error": null,
+  "timestamp": "2026-10-06T07:58:25.325632+00:00",
+  "skills_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "seconds": 206.8,
+  "tokens": {
+    "input": 295125,
+    "output": 4322,
+    "total": 299447
+  },
+  "tool_calls": 14,
+  "subagent_calls": 1,
+  "skills_read": 0,
+  "skills_modified": false,
+  "final_message": "",
+  "score": 1.0,
+  "passed": 9,
+  "total": 9,
+  "checks": [
+    {
+      "name": "valid_structure",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "entry_count",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "timestamps_utc",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "exception_fields",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "repeat_counts",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "counts_by_service",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "rule_service_names",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "rule_sorted_errors",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "rule_schema_header",
+      "passed": true,
+      "detail": ""
+    }
+  ]
+}
