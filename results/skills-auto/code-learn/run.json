@@ -1,0 +1,74 @@
+{
+  "task": "code-learn",
+  "condition": "skills-auto",
+  "role": "learn",
+  "error": null,
+  "timestamp": "2026-10-06T09:07:04.044652+00:00",
+  "skills_sha256": "8f6cfd3d0a752f62e972ce36dd341a99e3c308e313091a0decdb29e63de835e8",
+  "seconds": 84.2,
+  "tokens": {
+    "input": 183098,
+    "output": 2732,
+    "total": 185830
+  },
+  "tool_calls": 20,
+  "subagent_calls": 0,
+  "skills_read": 1,
+  "skills_modified": false,
+  "final_message": "Here is a summary of the changes made and the reasons for each:\n\n### Summary of Changes\n\n1. **`workspace/inventory/pricing.py`**:\n   - `parse_price`: Added support for stripping commas (thousands separators) and handling accounting-style negative values wrapped in parentheses `(...)`. Added explicit type annotations (`text: str -> Decimal`).\n   - `apply_discount`: Used `ROUND_HALF_UP` rounding to 2 decimal places to satisfy commercial rounding rules (e.g. `0.005 -> 0.01`). Added explicit type annotations (`price: Decimal, percent: int | float | Decimal -> Decimal`).\n\n2. **`workspace/inventory/report.py`**:\n   - `low_stock`: Fixed condition to filter items strictly below `threshold` (`<` instead of `<=`) and sorted the returned item names alphabetically ignoring case (`key=lambda name: name.lower()`), matching its docstring specification. Added explicit type annotations.\n   - `total_value`: Added explicit type annotations.\n\n3. **`workspace/inventory/export.py`**:\n   - `to_csv_row`: Added RFC 4180 escaping by wrapping names containing commas or double quotes in double quotes and doubling internal quotes. Added explicit type annotations.\n\n4. **`workspace/tests/test_regressions.py`**:\n   - Created regression tests covering accounting-style prices, strictly below threshold filtering with case-insensitive sorting, and RFC 4180 CSV escaping.\n\n5. **`workspace/CHANGELOG.md`**:\n   - Updated the `## Unreleased` section recording the bug fixes in the required format.",
+  "score": 1.0,
+  "passed": 10,
+  "total": 10,
+  "checks": [
+    {
+      "name": "visible_suite_passes",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "tests_not_modified",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "parse_price_all_formats",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "other_caller_fixed",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "discount_rounds_half_up",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "low_stock_follows_docstring",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "csv_quoting_follows_docstring",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "rule_type_hints",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "rule_regression_tests",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "rule_changelog",
+      "passed": true,
+      "detail": ""
+    }
+  ]
+}
