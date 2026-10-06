@@ -1,16 +1,14 @@
 # Báo cáo Lab: Self evolving Agentic
 
-> Sao chép tệp này thành `report/REPORT.md` (đã làm ở Phần 0) và điền dần qua các Phần của lab. Xóa các dòng hướng dẫn dạng trích dẫn (bắt đầu bằng `>`). Văn phong kỹ thuật, ngắn gọn, mọi nhận định đi kèm số liệu hoặc bằng chứng. Trong buổi học: điền mục 1 đến 7 (bản nháp). Sau buổi học: hoàn thiện mục 8 đến 10.
-
 ## 1. Thông tin nhóm và cấu hình
 
 | Họ tên | Mã sinh viên | Phần đóng góp |
 |---|---|---|
 | Võ Trường An | 2A202602656 | 100% |
 
-- Mô hình (tên deployment hoặc `LAB_MODEL`), nhiệt độ (`LAB_TEMPERATURE`), `recursion_limit`: `google_genai:gemini-3.8-flash` (từ `.env`), `LAB_TEMPERATURE=0`, `recursion_limit=60`
+- Mô hình (tên deployment hoặc `LAB_MODEL`), nhiệt độ (`LAB_TEMPERATURE`), `recursion_limit`: `ag/gemini-3.8-flash` (`gemini-3.8-flash` qua gateway OpenAI-compatible), `LAB_TEMPERATURE=0`, `recursion_limit=60`
 - Phiên bản Deep Agents (`pip show deepagents`), hệ điều hành, chạy trực tiếp hay trong Docker: `deepagents 0.7.21`, macOS 27.0.0 (Apple Silicon arm64), chạy trực tiếp
-- Số lần chạy tác vụ đã dùng / ngân sách: 6 / 15 (3 baseline + 3 subagents trên tập learn)
+- Số lần chạy tác vụ đã dùng / ngân sách: 21 / 25 runs (bao gồm 6 baseline, 6 subagents, 3 skills-auto-dev và 6 skills-auto)
 - Commit của tag `freeze`: `02948e4`
 
 ## 2. Giả thuyết (commit TRƯỚC tag `freeze`, Phần 4.0)
@@ -115,8 +113,8 @@
 
 | Skill | Tổng quát hay riêng cho tác vụ học? | Đúng hay sai (nêu chỗ sai nếu có) | Độ dài, `description` và `skills_read` ở Phần 3.4 |
 |---|---|---|---|
-| `python-code-maintenance` | **Tổng quát**: Hướng dẫn quy trình bảo trì gói Python (type hints cho mọi public function, tạo `tests/test_regressions.py` có >= 3 test, cập nhật `CHANGELOG.md` mục Unreleased). Không chứa task ID hay số liệu hardcode. | **Đúng**: Khớp chính xác với cả 3 quy ước house rules của họ tác vụ code. | 14 dòng; description kích hoạt rõ ràng ("Use when fixing bugs, refactoring, or preparing code changes for review in a Python package."); chờ đo ở Phần 3.4 |
-| `log-triage-reporting` | **Tổng quát**: Checklist chuẩn hóa báo cáo phân loại log (schema_version 2, generated_by "log-triage", normalize service name snake_case, timestamp UTC, sort errors ascending). | **Đúng**: Khớp chính xác với cả 3 quy ước house rules của họ tác vụ logs. | 13 dòng; description kích hoạt chuẩn xác ("Use when parsing server logs to extract errors and generate structured JSON triage reports."); chờ đo ở Phần 3.4 |
+| `python-code-maintenance` | **Tổng quát**: Hướng dẫn quy trình bảo trì gói Python (type hints cho mọi public function, tạo `tests/test_regressions.py` có >= 3 test, cập nhật `CHANGELOG.md` mục Unreleased). Không chứa task ID hay số liệu hardcode. | **Đúng**: Khớp chính xác với cả 3 quy ước house rules của họ tác vụ code. | 14 dòng; description kích hoạt rõ ràng ("Use when fixing bugs, refactoring, or preparing code changes for review in a Python package."); ở Phần 3.4 `skills_read = 0` (chạm recursion limit sớm), sau đóng băng `skills_read = 1` (đọc và làm theo đầy đủ, đạt 10/10) |
+| `log-triage-reporting` | **Tổng quát**: Checklist chuẩn hóa báo cáo phân loại log (schema_version 2, generated_by "log-triage", normalize service name snake_case, timestamp UTC, sort errors ascending). | **Đúng**: Khớp chính xác với cả 3 quy ước house rules của họ tác vụ logs. | 13 dòng; description kích hoạt chuẩn xác ("Use when parsing server logs to extract errors and generate structured JSON triage reports."); ở Phần 3.4 `skills_read = 1` (đọc 3 lần, đạt 6/9), sau đóng băng `skills_read = 1` (đạt 9/9 ở learn và 9/10 ở eval) |
 
 ## 7. Kết quả so sánh (Phần 4.3, 4.4)
 
